@@ -3,7 +3,7 @@ agent any
 
 environment {
 GIT_CREDENTIALS = 'github-pat'
-    }
+}
 
 stages {
 
