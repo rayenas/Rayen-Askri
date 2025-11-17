@@ -1,11 +1,11 @@
 pipeline {
 agent any
 
-    environment {
+environment {
         GIT_CREDENTIALS = 'github-pat'
     }
 
-    stages {
+stages {
 
         stage('Checkout') {
             steps {
@@ -14,21 +14,20 @@ agent any
                     credentialsId: GIT_CREDENTIALS
             }
         }
-
-        stage('Build') {
+stage('Build') {
             steps {
                 sh 'mvn -B -DskipTests clean package'
             }
         }
 
-        stage('Archive Artifact') {
+stage('Archive Artifact') {
             steps {
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
     }
 
-    post {
+post {
         success {
             echo "Build DONE "
         }
