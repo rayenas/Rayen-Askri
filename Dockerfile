@@ -1,5 +1,5 @@
-# Utiliser l'image officielle OpenJDK 17
-FROM openjdk:17-jdk-slim
+# Utiliser l'image officielle Java 17 de Eclipse Temurin
+FROM eclipse-temurin:17-jdk
 
 # Argument : chemin du JAR généré par Maven
 ARG JAR_FILE=target/*.jar
