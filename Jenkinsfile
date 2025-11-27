@@ -3,8 +3,8 @@ agent any
 
 environment {
 GIT_CREDENTIALS = 'github-pat'
-DOCKER_CREDS = 'docker-hub-creds'
-DOCKER_IMAGE = 'rayen/student-management'
+DOCKERHUB_CREDENTIALS = 'docker-hub-creds'
+DOCKER_IMAGE = "rayenaskri/student-management"
 }
 
 stages {
@@ -17,38 +17,41 @@ credentialsId: GIT_CREDENTIALS
 }
 }
 
-stage('Build Maven') {
+stage('Maven Build') {
 steps {
 sh 'mvn -B -DskipTests clean package'
 }
 }
 
-stage('Docker Build Image') {
+stage('Docker Build') {
 steps {
-script {
-sh "docker build -t ${DOCKER_IMAGE}:latest ."
-}
+sh 'docker build -t $DOCKER_IMAGE:latest .'
 }
 }
 
-stage('Docker Login & Push') {
+stage('Docker Push') {
 steps {
-withCredentials([usernamePassword(credentialsId: DOCKER_CREDS,
+withCredentials([usernamePassword(credentialsId: DOCKERHUB_CREDENTIALS,
 usernameVariable: 'DOCKERHUB_USER',
 passwordVariable: 'DOCKERHUB_PASS')]) {
-sh "echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin"
-sh "docker push ${DOCKER_IMAGE}:latest"
-}
+
+sh '''
+echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
+docker push $DOCKER_IMAGE:latest
+'''
 }
 }
 }
 
-post {
-success {
-echo "Pipeline DONE ✔"
-}
-failure {
-echo "Pipeline FAILED ❌"
+stage('Archive Artifact') {
+steps {
+archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
 }
 }
+}
+
+    post {
+        success { echo "✔ BUILD & DOCKER PUSH OK" }
+        failure { echo "❌ BUILD FAILED" }
+    }
 }
