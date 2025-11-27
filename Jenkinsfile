@@ -2,33 +2,42 @@ pipeline {
 agent any
 
 environment {
-DOCKER_HUB_REPO = "rayenaskri/student-management"
-IMAGE_TAG = "latest"
+GIT_CREDENTIALS = 'github-pat'
+DOCKER_CREDS = 'docker-hub-creds'
+DOCKER_IMAGE = 'rayen/student-management'
 }
 
 stages {
-       
-stage('Build Maven Project') {
+
+stage('Checkout') {
 steps {
-sh 'mvn clean package -DskipTests'
+git url: 'https://github.com/rayenas/Rayen-Askri.git',
+branch: 'main',
+credentialsId: GIT_CREDENTIALS
 }
 }
 
-stage('Build Docker Image') {
+stage('Build Maven') {
 steps {
-sh 'docker build -t $DOCKER_HUB_REPO:$IMAGE_TAG .'
+sh 'mvn -B -DskipTests clean package'
 }
 }
 
-stage('Push Docker Image to Docker Hub') {
+stage('Docker Build Image') {
 steps {
-withCredentials([usernamePassword(
-credentialsId: 'docker-hub-creds',
-usernameVariable: 'DOCKER_USER',
-passwordVariable: 'DOCKER_PASS'
-)]) {
-sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
-sh 'docker push $DOCKER_HUB_REPO:$IMAGE_TAG'
+script {
+sh "docker build -t ${DOCKER_IMAGE}:latest ."
+}
+}
+}
+
+stage('Docker Login & Push') {
+steps {
+withCredentials([usernamePassword(credentialsId: DOCKER_CREDS,
+usernameVariable: 'DOCKERHUB_USER',
+passwordVariable: 'DOCKERHUB_PASS')]) {
+sh "echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin"
+sh "docker push ${DOCKER_IMAGE}:latest"
 }
 }
 }
@@ -36,10 +45,10 @@ sh 'docker push $DOCKER_HUB_REPO:$IMAGE_TAG'
 
 post {
 success {
-echo "Build + Docker Push SUCCESS 🎉"
+echo "Pipeline DONE ✔"
 }
 failure {
-echo "Build FAILED "
+echo "Pipeline FAILED ❌"
 }
 }
 }
