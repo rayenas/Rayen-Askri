@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: springboot
-        image: borgimoatez123/student-management:latest
+        image: rayenaskri/student-management:latest
         ports:
         - containerPort: 8080
         env:
