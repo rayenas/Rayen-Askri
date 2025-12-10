@@ -5,6 +5,8 @@ environment {
 GIT_CREDENTIALS = 'github-pat'
 DOCKERHUB_CREDENTIALS = 'docker-hub-creds'
 DOCKER_IMAGE = "rayenaskri/student-management"
+KUBE_CREDENTIALS = "kubeconfig-cred"   // secret file
+K8S_NAMESPACE = "devops"
 }
 
 stages {
@@ -31,9 +33,11 @@ sh 'docker build -t $DOCKER_IMAGE:latest .'
 
 stage('Docker Push') {
 steps {
-withCredentials([usernamePassword(credentialsId: DOCKERHUB_CREDENTIALS,
+withCredentials([usernamePassword(
+credentialsId: DOCKERHUB_CREDENTIALS,
 usernameVariable: 'DOCKERHUB_USER',
-passwordVariable: 'DOCKERHUB_PASS')]) {
+passwordVariable: 'DOCKERHUB_PASS'
+)]) {
 
 sh '''
 echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
@@ -48,10 +52,35 @@ steps {
 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
 }
 }
+
+/* ---------- FIXED KUBERNETES DEPLOY STAGE ---------- */
+stage('Deploy to Kubernetes') {
+steps {
+withCredentials([file(credentialsId: KUBE_CREDENTIALS, variable: 'KUBECONFIG')]) {
+
+sh '''
+echo "📌 Using kubeconfig: $KUBECONFIG"
+
+echo "📌 Deploying MySQL..."
+kubectl apply -f k8s/mysql-secret.yaml -n devops || true
+kubectl apply -f k8s/mysql-pv-pvc.yaml -n devops || true
+kubectl apply -f k8s/mysql-deployment.yaml -n devops || true
+kubectl apply -f k8s/mysql-service.yaml -n devops || true
+
+echo "📌 Deploying Spring Boot..."
+kubectl apply -f k8s/springboot-deployment.yaml -n devops
+kubectl apply -f k8s/springboot-service.yaml -n devops
+
+echo "🚀 Kubernetes deployment finished"
+'''
+}
+}
+}
+        
 }
 
-    post {
-        success { echo "✔ BUILD & DOCKER PUSH OK" }
-        failure { echo "❌ BUILD FAILED" }
-    }
+post {
+success { echo "✔ BUILD + DOCKER PUSH + K8S DEPLOY SUCCESSFUL" }
+failure { echo "❌ PIPELINE FAILED" }
+}
 }
