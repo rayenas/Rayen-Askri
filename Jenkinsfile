@@ -52,12 +52,13 @@ stage('Deploy to Kubernetes') {
 steps {
 // Déploiement K8s sans kubeconfig
 sh """
-kubectl --server=https://192.168.49.2:8443 \\
---certificate-authority=$HOME/ca.crt \\
---client-certificate=$HOME/client.crt \\
---client-key=$HOME/client.key \\
+KUBECONFIG=/dev/null kubectl --server=https://192.168.49.2:8443 \\
+--certificate-authority=/var/lib/jenkins/ca.crt \\
+--client-certificate=/var/lib/jenkins/client.crt \\
+--client-key=/var/lib/jenkins/client.key \\
 apply -f deployment.yaml
 """
+
 }
 }
 }
