@@ -10,7 +10,6 @@ KUBECONFIG = '/var/lib/jenkins/.kube/config'
 }
 
 stages {
-
 stage('Checkout') {
 steps {
 git url: 'https://github.com/rayenas/Rayen-Askri.git',
@@ -24,13 +23,11 @@ steps {
 sh 'mvn -B -DskipTests clean package'
 }
 }
-
 stage('Docker Build') {
 steps {
 sh 'docker build -t $DOCKER_IMAGE:latest .'
 }
 }
-
 stage('Docker Push') {
 steps {
 withCredentials([usernamePassword(
@@ -45,21 +42,24 @@ docker push $DOCKER_IMAGE:latest
 }
 }
 }
-
 stage('Archive Artifact') {
 steps {
-archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+ archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
 }
 }
-
 stage('Deploy to Kubernetes') {
 steps {
-sh 'kubectl apply -f ${WORKSPACE}/k8s/deployment.yaml -n $K8S_NAMESPACE'
+script {
+// Utiliser la variable d'environnement K8S_NAMESPACE
+def namespace = env.K8S_NAMESPACE ?: "devops"
+// Déployer MySQL en premier si l'application en dépend
+sh "kubectl apply -f ${WORKSPACE}/k8s/mysql-deployment.yaml -n ${namespace}"
+// Puis déployer l'application Spring Boot
+sh "kubectl apply -f ${WORKSPACE}/k8s/spring-boot-deployment.yaml -n ${namespace}"
 }
 }
-
 }
-
+}
 post {
 success { echo "✔ BUILD + DOCKER PUSH + K8S DEPLOY SUCCESSFUL" }
 failure { echo "❌ PIPELINE FAILED" }
