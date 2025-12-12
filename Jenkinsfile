@@ -50,18 +50,18 @@ archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
 
 stage('Deploy to Kubernetes') {
 steps {
-// Déploiement K8s sans kubeconfig
-sh """
-KUBECONFIG=/dev/null kubectl --server=https://192.168.49.2:8443 \\
---certificate-authority=/var/lib/jenkins/ca.crt \\
---client-certificate=/var/lib/jenkins/client.crt \\
---client-key=/var/lib/jenkins/client.key \\
-apply -f deployment.yaml
-"""
+script {
+sh '''
+kubectl --server=https://192.168.49.2:8443 \
+--certificate-authority=/var/lib/jenkins/ca.crt \
+--client-certificate=/var/lib/jenkins/client.crt \
+--client-key=/var/lib/jenkins/client.key \
+apply -f ${WORKSPACE}/deployment.yaml
+'''
+}
+}
+}
 
-}
-}
-}
 
 post {
 success { echo "✔ BUILD + DOCKER PUSH + K8S DEPLOY SUCCESSFUL" }
