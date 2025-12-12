@@ -87,4 +87,4 @@ success { echo "✔ BUILD + DOCKER PUSH + K8S DEPLOY SUCCESSFUL" }
 failure { echo "❌ PIPELINE FAILED" }
 }
 }
-}
+
