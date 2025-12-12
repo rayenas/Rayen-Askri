@@ -20,14 +20,33 @@ spec:
         - containerPort: 8080
         env:
         - name: SPRING_DATASOURCE_URL
-          value: "jdbc:mysql://mysql-service:3306/studentdb?useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true"
+          value: "jdbc:mysql://mysql-service:3306/studentdb?createDatabaseIfNotExist=true"
         - name: SPRING_DATASOURCE_USERNAME
-          value: "root"
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: username
         - name: SPRING_DATASOURCE_PASSWORD
           valueFrom:
             secretKeyRef:
               name: mysql-secret
               key: password
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: update
         - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
-          value: "com.mysql.cj.jdbc.Driver"
-
+          value: com.mysql.cj.jdbc.Driver
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: springboot-service
+  namespace: devops
+spec:
+  type: NodePort
+  selector:
+    app: springboot
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+    nodePort: 30080
