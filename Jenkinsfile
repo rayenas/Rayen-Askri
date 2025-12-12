@@ -5,7 +5,6 @@ environment {
 GIT_CREDENTIALS = 'github-pat'
 DOCKERHUB_CREDENTIALS = 'docker-hub-creds'
 DOCKER_IMAGE = "rayenaskri/student-management"
-KUBE_CREDENTIALS = "kubeconfig-cred"   // secret file
 K8S_NAMESPACE = "devops"
 }
 
@@ -56,32 +55,16 @@ archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
 /* ---------- FIXED KUBERNETES DEPLOY STAGE ---------- */
 stage('Deploy to Kubernetes') {
     steps {
-        withCredentials([file(credentialsId: KUBE_CREDENTIALS, variable: 'KCFG')]) {
-
-            sh '''
-                echo "📌 Using kubeconfig file: $KCFG"
-                export KUBECONFIG=$KCFG
-
-                echo "📌 Testing cluster access..."
-                kubectl get nodes
-
-                echo "📌 Deploying MySQL..."
-                kubectl apply -f k8s/mysql-secret.yaml -n devops || true
-                kubectl apply -f k8s/mysql-pv-pvc.yaml -n devops || true
-                kubectl apply -f k8s/mysql-deployment.yaml -n devops || true
-                kubectl apply -f k8s/mysql-service.yaml -n devops || true
-
-                echo "📌 Deploying Spring Boot..."
-                kubectl apply -f k8s/springboot-deployment.yaml -n devops
-                kubectl apply -f k8s/springboot-service.yaml -n devops
-
-                echo "🚀 Deployment completed"
-            '''
-        }
+        sh """
+        export KUBECONFIG=
+        kubectl --server=https://192.168.49.2:8443 \
+                --certificate-authority=$HOME/ca.crt \
+                --client-certificate=$HOME/client.crt \
+                --client-key=$HOME/client.key \
+                apply -f deployment.yaml
+        """
     }
 }
-}
-
 
 post {
 success { echo "✔ BUILD + DOCKER PUSH + K8S DEPLOY SUCCESSFUL" }
