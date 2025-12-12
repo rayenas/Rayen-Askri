@@ -54,7 +54,7 @@ archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
 
 stage('Deploy to Kubernetes') {
 steps {
-sh 'kubectl apply -f ${WORKSPACE}/deployment.yaml -n $K8S_NAMESPACE'
+sh 'kubectl apply -f ${WORKSPACE}/k8s/deployment.yaml -n $K8S_NAMESPACE'
 }
 }
 
