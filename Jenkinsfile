@@ -7,6 +7,7 @@ DOCKERHUB_CREDENTIALS = 'docker-hub-creds'
 DOCKER_IMAGE = "rayenaskri/student-management"
 K8S_NAMESPACE = "devops"
 }
+
 stages {
 
 stage('Checkout') {
@@ -16,11 +17,13 @@ branch: 'main',
 credentialsId: GIT_CREDENTIALS
 }
 }
+
 stage('Maven Build') {
 steps {
 sh 'mvn -B -DskipTests clean package'
 }
 }
+
 stage('Docker Build') {
 steps {
 sh 'docker build -t $DOCKER_IMAGE:latest .'
@@ -62,9 +65,10 @@ apply -f ${WORKSPACE}/deployment.yaml
 }
 }
 
+} // end of stages
 
 post {
 success { echo "✔ BUILD + DOCKER PUSH + K8S DEPLOY SUCCESSFUL" }
 failure { echo "❌ PIPELINE FAILED" }
 }
-}
+} // end of pipeline
