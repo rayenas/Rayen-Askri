@@ -7,7 +7,6 @@ DOCKERHUB_CREDENTIALS = 'docker-hub-creds'
 DOCKER_IMAGE = "rayenaskri/student-management"
 K8S_NAMESPACE = "devops"
 }
-
 stages {
 
 stage('Checkout') {
@@ -17,13 +16,11 @@ branch: 'main',
 credentialsId: GIT_CREDENTIALS
 }
 }
-
 stage('Maven Build') {
 steps {
 sh 'mvn -B -DskipTests clean package'
 }
 }
-
 stage('Docker Build') {
 steps {
 sh 'docker build -t $DOCKER_IMAGE:latest .'
@@ -37,7 +34,6 @@ credentialsId: DOCKERHUB_CREDENTIALS,
 usernameVariable: 'DOCKERHUB_USER',
 passwordVariable: 'DOCKERHUB_PASS'
 )]) {
-
 sh '''
 echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
 docker push $DOCKER_IMAGE:latest
@@ -52,23 +48,22 @@ archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
 }
 }
 
-/* ---------- FIXED KUBERNETES DEPLOY STAGE ---------- */
 stage('Deploy to Kubernetes') {
 steps {
+// Déploiement K8s sans kubeconfig
 sh """
-kubectl --server=https://192.168.49.2:8443 \
---certificate-authority=$HOME/ca.crt \
---client-certificate=$HOME/client.crt \
---client-key=$HOME/client.key \
+kubectl --server=https://192.168.49.2:8443 \\
+--certificate-authority=$HOME/ca.crt \\
+--client-certificate=$HOME/client.crt \\
+--client-key=$HOME/client.key \\
 apply -f deployment.yaml
 """
 }
 }
-
+}
 
 post {
 success { echo "✔ BUILD + DOCKER PUSH + K8S DEPLOY SUCCESSFUL" }
 failure { echo "❌ PIPELINE FAILED" }
 }
 }
-
