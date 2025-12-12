@@ -53,9 +53,9 @@ script {
 // Utiliser la variable d'environnement K8S_NAMESPACE
 def namespace = env.K8S_NAMESPACE ?: "devops"
 // Déployer MySQL en premier si l'application en dépend
-sh "kubectl apply -f ${WORKSPACE}/k8s/mysql-deployment.yaml -n ${namespace}"
+sh "kubectl apply -f ${WORKSPACE}/k8s/mysql-deployement.yaml -n ${namespace}"
 // Puis déployer l'application Spring Boot
-sh "kubectl apply -f ${WORKSPACE}/k8s/spring-boot-deployment.yaml -n ${namespace}"
+sh "kubectl apply -f ${WORKSPACE}/k8s/springboot-deployment.yaml -n ${namespace}"
 }
 }
 }
