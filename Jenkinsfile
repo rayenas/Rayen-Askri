@@ -55,7 +55,7 @@ stage('Deploy to Kubernetes') {
 steps {
 script {
 sh '''
-kubectl --server=https://192.168.49.2:8443 \
+KUBECONFIG=/dev/null kubectl --server=https://192.168.49.2:8443 \
 --certificate-authority=/var/lib/jenkins/ca.crt \
 --client-certificate=/var/lib/jenkins/client.crt \
 --client-key=/var/lib/jenkins/client.key \
@@ -64,6 +64,7 @@ apply -f ${WORKSPACE}/deployment.yaml
 }
 }
 }
+
 
 } // end of stages
 
