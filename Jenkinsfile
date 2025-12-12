@@ -56,9 +56,10 @@ archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
 /* ---------- FIXED KUBERNETES DEPLOY STAGE ---------- */
 stage('Deploy to Kubernetes') {
 steps {
-withCredentials([file(credentialsId: KUBE_CREDENTIALS, variable: 'KUBECONFIG')]) {
+withCredentials([file(credentialsId: KUBE_CREDENTIALS, variable: 'KCFG')]) {
+    sh '''
+        export KUBECONFIG=$KCFG
 
-sh '''
 echo "📌 Using kubeconfig: $KUBECONFIG"
 
 echo "📌 Deploying MySQL..."
