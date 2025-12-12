@@ -56,7 +56,6 @@ archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
 stage('Deploy to Kubernetes') {
 steps {
 sh """
-export KUBECONFIG=
 kubectl --server=https://192.168.49.2:8443 \
 --certificate-authority=$HOME/ca.crt \
 --client-certificate=$HOME/client.crt \
@@ -65,6 +64,7 @@ apply -f deployment.yaml
 """
 }
 }
+
 
 post {
 success { echo "✔ BUILD + DOCKER PUSH + K8S DEPLOY SUCCESSFUL" }
