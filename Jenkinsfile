@@ -54,16 +54,16 @@ archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
 
 /* ---------- FIXED KUBERNETES DEPLOY STAGE ---------- */
 stage('Deploy to Kubernetes') {
-    steps {
-        sh """
-        export KUBECONFIG=
-        kubectl --server=https://192.168.49.2:8443 \
-                --certificate-authority=$HOME/ca.crt \
-                --client-certificate=$HOME/client.crt \
-                --client-key=$HOME/client.key \
-                apply -f deployment.yaml
-        """
-    }
+steps {
+sh """
+export KUBECONFIG=
+kubectl --server=https://192.168.49.2:8443 \
+--certificate-authority=$HOME/ca.crt \
+--client-certificate=$HOME/client.crt \
+--client-key=$HOME/client.key \
+apply -f deployment.yaml
+"""
+}
 }
 
 post {
