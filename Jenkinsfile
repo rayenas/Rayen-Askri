@@ -55,30 +55,32 @@ archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
 
 /* ---------- FIXED KUBERNETES DEPLOY STAGE ---------- */
 stage('Deploy to Kubernetes') {
-steps {
-withCredentials([file(credentialsId: KUBE_CREDENTIALS, variable: 'KCFG')]) {
-    sh '''
-        export KUBECONFIG=$KCFG
+    steps {
+        withCredentials([file(credentialsId: KUBE_CREDENTIALS, variable: 'KCFG')]) {
 
-echo "📌 Using kubeconfig: $KUBECONFIG"
+            sh '''
+                echo "📌 Using kubeconfig file: $KCFG"
+                export KUBECONFIG=$KCFG
 
-echo "📌 Deploying MySQL..."
-kubectl apply -f k8s/mysql-secret.yaml -n devops || true
-kubectl apply -f k8s/mysql-pv-pvc.yaml -n devops || true
-kubectl apply -f k8s/mysql-deployment.yaml -n devops || true
-kubectl apply -f k8s/mysql-service.yaml -n devops || true
+                echo "📌 Testing cluster access..."
+                kubectl get nodes
 
-echo "📌 Deploying Spring Boot..."
-kubectl apply -f k8s/springboot-deployment.yaml -n devops
-kubectl apply -f k8s/springboot-service.yaml -n devops
+                echo "📌 Deploying MySQL..."
+                kubectl apply -f k8s/mysql-secret.yaml -n devops || true
+                kubectl apply -f k8s/mysql-pv-pvc.yaml -n devops || true
+                kubectl apply -f k8s/mysql-deployment.yaml -n devops || true
+                kubectl apply -f k8s/mysql-service.yaml -n devops || true
 
-echo "🚀 Kubernetes deployment finished"
-'''
+                echo "📌 Deploying Spring Boot..."
+                kubectl apply -f k8s/springboot-deployment.yaml -n devops
+                kubectl apply -f k8s/springboot-service.yaml -n devops
+
+                echo "🚀 Deployment completed"
+            '''
+        }
+    }
 }
-}
-}
-        
-}
+
 
 post {
 success { echo "✔ BUILD + DOCKER PUSH + K8S DEPLOY SUCCESSFUL" }
