@@ -1,75 +1,67 @@
 pipeline {
-agent any
+    agent any
 
-environment {
-GIT_CREDENTIALS = 'github-pat'
-DOCKERHUB_CREDENTIALS = 'docker-hub-creds'
-DOCKER_IMAGE = "rayenaskri/student-management"
-K8S_NAMESPACE = "devops"
-}
+    environment {
+        GIT_CREDENTIALS = 'github-pat'
+        DOCKERHUB_CREDENTIALS = 'docker-hub-creds'
+        DOCKER_IMAGE = "rayenaskri/student-management"
+        K8S_NAMESPACE = "devops"
+        KUBECONFIG = "/var/lib/jenkins/.kube/config" // on utilise directement le kubeconfig
+    }
 
-stages {
+    stages {
 
-stage('Checkout') {
-steps {
-git url: 'https://github.com/rayenas/Rayen-Askri.git',
-branch: 'main',
-credentialsId: GIT_CREDENTIALS
-}
-}
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/rayenas/Rayen-Askri.git',
+                    branch: 'main',
+                    credentialsId: GIT_CREDENTIALS
+            }
+        }
 
-stage('Maven Build') {
-steps {
-sh 'mvn -B -DskipTests clean package'
-}
-}
+        stage('Maven Build') {
+            steps {
+                sh 'mvn -B -DskipTests clean package'
+            }
+        }
 
-stage('Docker Build') {
-steps {
-sh 'docker build -t $DOCKER_IMAGE:latest .'
-}
-}
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t $DOCKER_IMAGE:latest .'
+            }
+        }
 
-stage('Docker Push') {
-steps {
-withCredentials([usernamePassword(
-credentialsId: DOCKERHUB_CREDENTIALS,
-usernameVariable: 'DOCKERHUB_USER',
-passwordVariable: 'DOCKERHUB_PASS'
-)]) {
-sh '''
-echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
-docker push $DOCKER_IMAGE:latest
-'''
-}
-}
-}
+        stage('Docker Push') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: DOCKERHUB_CREDENTIALS,
+                    usernameVariable: 'DOCKERHUB_USER',
+                    passwordVariable: 'DOCKERHUB_PASS'
+                )]) {
+                    sh '''
+                        echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
+                        docker push $DOCKER_IMAGE:latest
+                    '''
+                }
+            }
+        }
 
-stage('Archive Artifact') {
-steps {
-archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
-}
-}
+        stage('Archive Artifact') {
+            steps {
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+            }
+        }
 
-stage('Deploy to Kubernetes') {
-steps {
-script {
-sh '''
-KUBECONFIG=/dev/null kubectl --server=https://192.168.49.2:8443 \
---certificate-authority=/var/lib/jenkins/ca.crt \
---client-certificate=/var/lib/jenkins/client.crt \
---client-key=/var/lib/jenkins/client.key \
-apply -f ${WORKSPACE}/deployment.yaml
-'''
-}
-}
-}
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh 'kubectl apply -f ${WORKSPACE}/deployment.yaml -n $K8S_NAMESPACE'
+            }
+        }
 
+    }
 
-} // end of stages
-
-post {
-success { echo "✔ BUILD + DOCKER PUSH + K8S DEPLOY SUCCESSFUL" }
-failure { echo "❌ PIPELINE FAILED" }
+    post {
+        success { echo "✔ BUILD + DOCKER PUSH + K8S DEPLOY SUCCESSFUL" }
+        failure { echo "❌ PIPELINE FAILED" }
+    }
 }
-} // end of pipeline
