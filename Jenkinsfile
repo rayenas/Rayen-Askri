@@ -1,6 +1,5 @@
 pipeline {
     agent any
-
     environment {
         GIT_CREDENTIALS = 'github-pat'
         DOCKERHUB_CREDENTIALS = 'docker-hub-creds'
@@ -8,9 +7,7 @@ pipeline {
         K8S_NAMESPACE = 'devops'
         KUBECONFIG = '/var/lib/jenkins/.kube/config'
     }
-
     stages {
-
         stage('Checkout') {
             steps {
                 git url: 'https://github.com/rayenas/Rayen-Askri.git',
@@ -18,19 +15,27 @@ pipeline {
                     credentialsId: GIT_CREDENTIALS
             }
         }
-
         stage('Maven Build') {
             steps {
                 sh 'mvn -B -DskipTests clean package'
             }
         }
-
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh '''
+                        mvn sonar:sonar \
+                        -Dsonar.projectKey=Student-Management \
+                        -Dsonar.projectName="Student Management"
+                    '''
+                }
+            }
+        }
         stage('Docker Build') {
             steps {
                 sh 'docker build -t $DOCKER_IMAGE:latest .'
             }
         }
-
         stage('Docker Push') {
             steps {
                 withCredentials([usernamePassword(
@@ -45,19 +50,15 @@ pipeline {
                 }
             }
         }
-
         stage("Archive Artifact") {
             steps {
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
-
         stage("Deploy to Kubernetes") {
             steps {
                 script {
-
                     sh "kubectl get namespace $K8S_NAMESPACE || kubectl create namespace $K8S_NAMESPACE"
-
                     // appliquer TOUS les YAML du dossier k8s
                     sh """
                         for f in ${WORKSPACE}/k8s/*.yaml; do
@@ -69,7 +70,6 @@ pipeline {
             }
         }
     }
-
     post {
         success { echo "✔ BUILD + DOCKER PUSH + K8S DEPLOY SUCCESSFUL" }
         failure { echo "❌ PIPELINE FAILED" }
